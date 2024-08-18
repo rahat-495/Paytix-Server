@@ -67,13 +67,11 @@ async function run() {
 
     app.get('/agentTransactions' , async (req , res) => {
       const {email , phone} = req.query ;
-      const isValidInfo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ;
-      const agentTransactions = await transactionsCollection.find(isValidInfo ? {to : email} : {to : phone}).sort({sortableDate : -1}).limit(10).toArray() ;
+      const agentTransactions = await transactionsCollection.find( { $or : [ {to : phone} , {senderPhone : phone} , { senderEmail : email } ] } ).sort({sortableDate : -1}).limit(10).toArray() ;
       res.send(agentTransactions) ;
     })
 
     app.get('/adminTransactions' , async (req , res) => {
-      const {email , phone} = req.query ;
       const agentTransactions = await transactionsCollection.find().sort({sortableDate : -1}).toArray() ;
       res.send(agentTransactions) ;
     })
@@ -86,8 +84,8 @@ async function run() {
 
     app.get('/cashOutRequests' , async (req , res) => {
       const {phone} = req.query ;
-      const inRequests = await cashOutRequestsCollection.find({agent : phone}).sort({sortableDate : -1}).toArray() ;
-      res.send(inRequests) ;
+      const outRequests = await cashOutRequestsCollection.find({agent : phone}).sort({sortableDate : -1}).toArray() ;
+      res.send(outRequests) ;
     })
 
     app.get('/users' , async (req , res) => {
@@ -96,16 +94,19 @@ async function run() {
       if(name){
         query.name = { $regex: name, $options: 'i' } ;
       }
-      else if(phone){
+      if(phone){
         query.phone = { $regex: phone, $options: 'i' } ;
       }
-      else if(activity && activity === 'all'){
+      if(name && phone){
+        query = { $and : [ { name : { $regex: name, $options: 'i' } } , { phone : { $regex: phone, $options: 'i' } } ] }
+      }
+      if(activity && activity === 'all'){
         query.activity ;
       }
-      else if(activity && activity === 'active'){
+      if(activity && activity === 'active'){
         query.isBlock = activity ;
       }
-      else if(activity && activity === 'blocked'){
+      if(activity && activity === 'blocked'){
         query.isBlock = activity ;
       }
       const users = await usersCollection.find(query).toArray() ;
