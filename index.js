@@ -11,6 +11,7 @@ const app = express() ;
 app.use(cors({
   origin : [
     'http://localhost:5173' ,
+    'https://gorgeous-souffle-d08577.netlify.app'
   ],
   credentials : true ,
 })) ;
